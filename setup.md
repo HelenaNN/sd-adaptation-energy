@@ -5,6 +5,8 @@ This project uses two conda environments:
 - **`sd-diffusers`** — for adaptation and inference
 - **`scores`** — for metric computation and plotting
 
+The instructions of this section are orientative as for each environment there are different requirements. Treat this file as a guide. Also you can work with a single conda environment if you want, just be careful with dependencies between Python libraries.
+
 ---
 
 ## Training Environment (`sd-diffusers`)
