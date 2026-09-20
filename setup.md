@@ -55,7 +55,7 @@ pip install codecarbon wandb pyyaml
 If you are working in a multi-GPU environment, run the following to avoid unintentional distributed training:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 accelerate config default
+CUDA_VISIBLE_DEVICES=0 accelerate config
 ```
 
 #### 6. Log in to Weights & Biases (optional)
