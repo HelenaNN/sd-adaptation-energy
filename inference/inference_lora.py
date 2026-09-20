@@ -5,7 +5,7 @@ import os
 
 # CONFIGURACIÓN
 
-base_dir = "/home/helena/Desktop/tfm/experiments/sdv15/lora/outputs_a40_with_cp"
+base_dir = "sd-adaptations/inference/images/lora/"
 
 train_names = [
     "0_sdv15_lora_rank8_res512_Battista_steps5000_seed1337_batch6",
