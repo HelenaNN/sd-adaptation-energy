@@ -5,7 +5,7 @@ import os
 
 # CONFIGURACIÓN
 
-base_dir = "/home/helena/Desktop/tfm/experiments/sdv15/finetuning/outputs_a40_outputs_with_cp"
+base_dir = "sd-adaptations/inference/images/finetune/"
 
 train_names = [
     "0_sdv15_finetuning_res512_Battista_steps5000_seed1337_batch6",
