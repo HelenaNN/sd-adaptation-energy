@@ -55,8 +55,10 @@ pip install codecarbon wandb pyyaml
 If you are working in a multi-GPU environment, run the following to avoid unintentional distributed training:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 accelerate config
+CUDA_VISIBLE_DEVICES=0 accelerate config default
 ```
+
+> **Note:** `0` is just an example. You can use any GPU index available on your machine (e.g. `1`, `2`, ...) to select which GPU to use. Run `nvidia-smi` to list the available GPUs and their indices.
 
 #### 6. Log in to Weights & Biases (optional)
 
@@ -105,3 +107,5 @@ Or set it at the top of the script:
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 ```
+
+In both cases, `0` is only an example: replace it with the index of the GPU you want to use (e.g. `1`, `2`, ...). You can also expose several GPUs by separating indices with commas (e.g. `CUDA_VISIBLE_DEVICES=0,1`), although this guide assumes single-GPU execution.
