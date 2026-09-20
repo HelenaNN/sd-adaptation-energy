@@ -25,6 +25,19 @@ Model adaptation techniques for diffusion models are increasingly used for perso
 
 ---
 
+## Training Scripts & Attribution
+
+The training scripts in [`training/core/`](training/core/) are based on the official training examples from [🤗 Hugging Face Diffusers](https://github.com/huggingface/diffusers) (`examples/text_to_image` for LoRA and Fine-tuning, and `examples/textual_inversion` for Textual Inversion).
+
+They have been modified to:
+
+- Integrate **CodeCarbon** energy tracking
+- Save all the additional outputs required by the analysis pipeline (energy and duration measurements, among others)
+
+All credit for the original implementations goes to the Diffusers authors and contributors.
+
+---
+
 ## Repository Structure
 
 ```
@@ -36,7 +49,7 @@ sd-adaptation-energy/
 │
 ├── training/                 # Training scripts with energy tracking
 │   ├── README.md
-│   ├── core/                 # Core training scripts (CodeCarbon integrated)
+│   ├── core/                 # Core training scripts (adapted from Diffusers, CodeCarbon integrated)
 │   └── launchers/            # Experiment launcher scripts
 │
 ├── inference/                # Image generation scripts
@@ -94,9 +107,12 @@ If you use this code for your research, please cite the original TFM thesis and 
 - Hu et al., *LoRA: Low-Rank Adaptation of Large Language Models*, ICLR 2022
 - Gal et al., *An Image is Worth One Word: Personalizing Text-to-Image Generation using Textual Inversion*, ICLR 2023
 - Courty et al., *CodeCarbon: Estimate and Track Carbon Emissions from Machine Learning Computing*, 2023
+- von Platen et al., *Diffusers: State-of-the-art diffusion models*, Hugging Face, 2022 — [github.com/huggingface/diffusers](https://github.com/huggingface/diffusers)
 
 ---
 
 ## License
 
 MIT License
+
+The training scripts in `training/core/` are derived from Hugging Face Diffusers, which is distributed under the Apache License 2.0. Their original license headers and attribution should be kept.
