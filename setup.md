@@ -2,8 +2,8 @@
 
 This project uses two conda environments:
 
-- **`sd-diffusers`** — for training and inference
-- **`scores2`** — for metric computation and plotting
+- **`sd-diffusers`** — for adaptation and inference
+- **`scores`** — for metric computation and plotting
 
 ---
 
@@ -22,22 +22,20 @@ conda activate sd-diffusers
 pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
 ```
 
-Verify:
-```bash
-python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-# Expected: 2.5.1+cu121 True
-```
-
 ### 3. Install Diffusers from source
 
 ```bash
 git clone https://github.com/huggingface/diffusers
 cd diffusers
 pip install .
+```
+The next instructions depends on the technique selected: for LoRA and Fine-tuning is **cd examples/text_to_image** but for Textual Inversion is **cd example/textual_inversion**:
+
+```bash
 cd examples/text_to_image
 pip install -r requirements.txt
 cd ../../..
-```
+´´´
 
 ### 4. Install remaining dependencies
 
@@ -47,25 +45,10 @@ pip install codecarbon wandb pyyaml
 
 ### 5. Configure Accelerate for single GPU
 
+This step is if you work in a Multi-GPU Environment.
+
 ```bash
 CUDA_VISIBLE_DEVICES=0 accelerate config default
-```
-
-Or create the config manually:
-
-```bash
-cat > ~/.cache/huggingface/accelerate/default_config.yaml << 'EOF'
-compute_environment: LOCAL_MACHINE
-distributed_type: 'NO'
-downcast_bf16: 'no'
-gpu_ids: '0'
-machine_rank: 0
-main_training_function: main
-mixed_precision: 'no'
-num_machines: 1
-num_processes: 1
-use_cpu: false
-EOF
 ```
 
 ### 6. Log in to Weights & Biases (optional)
@@ -99,15 +82,9 @@ pip install git+https://github.com/openai/CLIP.git
 pip install torchmetrics[image]
 ```
 
-### 4. Verify
-
-```bash
-python -c "import torch, clip, torchmetrics; print('OK')"
-```
-
 ---
 
-## Notes on Multi-GPU Systems
+## Notes on Multi-GPU Environments
 
 If your machine has multiple GPUs, always set `CUDA_VISIBLE_DEVICES` to avoid running on multiple GPUs unintentionally:
 
