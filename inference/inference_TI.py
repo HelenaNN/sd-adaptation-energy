@@ -5,7 +5,7 @@ import os
 
 # CONFIGURACIÓN
 
-base_dir = "/home/helena/Desktop/tfm/experiments/sdv15/textual_inversion/outputs_a40_isolated_gpu"
+base_dir = "sd-adaptations/inference/images/textual_inversion/"
 
 train_names = [
     "0_sdv15_textual_inversion_res512_Battista_steps5000_seed1337",
