@@ -42,7 +42,7 @@ CUDA_VISIBLE_DEVICES=0 python training/launchers/ti_titan.py
 ## Step 2 — Checkpoint Duration Calibration
 
 Before cleaning energy and duration, you need to calibrate the checkpoint-saving duration.
-This runs short training jobs (300 steps) to measure how long each checkpoint save takes.
+This runs short adaptation trainings (300 steps) to measure how long each checkpoint save takes.
 
 ```bash
 # Run calibration for each technique and GPU
@@ -130,7 +130,7 @@ python metrics/subject/scores_editability.py
 Generate all plots. Switch to the scores/analysis environment if needed.
 
 ```bash
-conda activate scores2
+conda activate scores
 ```
 
 ### Energy plots
@@ -172,6 +172,6 @@ python plots/quality/plot_scatter_quality.py
 - All training scripts use `CUDA_VISIBLE_DEVICES=0` to run on a single GPU.
 - The two conda environments serve different purposes:
   - `sd-diffusers` — training and inference
-  - `scores2` — metric computation and plotting
+  - `scores` — metric computation and plotting
 - Checkpoint-saving energy overhead is subtracted automatically in Step 3.
 - See each folder's `README.md` for configuration details (paths, batch sizes, etc.).
