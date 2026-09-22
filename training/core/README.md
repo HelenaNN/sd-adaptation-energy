@@ -84,7 +84,9 @@ energy_per_checkpoint.csv
 
 The file contains:
 
+```text
 timestamp,global_step,energy_consumed_kwh,emissions_kg,total_energy_kwh
+```
 
 This makes it possible to analyse the energy and emissions associated specifically with checkpoint creation.
 
@@ -121,11 +123,12 @@ output_dir/
 
 The four CSV files provide complementary information:
 
-File	Description
-emissions.csv	Energy consumption and emissions measured by CodeCarbon
-gpu_metrics.csv	GPU temperature, utilisation, memory usage and power draw
-training_metrics.csv	Training loss and learning-rate evolution
-energy_per_checkpoint.csv	Energy and emissions measured for checkpoint creation
+| File | Description |
+| --- | --- |
+| `emissions.csv` | Energy consumption and emissions measured by CodeCarbon |
+| `gpu_metrics.csv` | GPU temperature, utilisation, memory usage and power draw |
+| `training_metrics.csv` | Training loss and learning-rate evolution |
+| `energy_per_checkpoint.csv` | Energy and emissions measured for checkpoint creation |
 
 ## Training methods
 
