@@ -1,6 +1,6 @@
 # Modified Diffusers Training Scripts
 
-This folder contains modified training scripts based on the training examples provided by Hugging Face Diffusers.
+This folder contains modified training scripts based on the [training examples provided by Hugging Face Diffusers](https://github.com/huggingface/diffusers/tree/main/examples).
 
 The scripts are used to adapt Stable Diffusion models using three different approaches:
 
