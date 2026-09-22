@@ -46,11 +46,13 @@ temperature_gpu
 utilization_gpu
 memory_used_mb
 power_draw_w
-
+```
 
 They are stored in:
 
+```text
 gpu_metrics.csv
+```
 
 This provides information about GPU utilisation and power behaviour during the training execution.
 
@@ -58,11 +60,15 @@ This provides information about GPU utilisation and power behaviour during the t
 
 An additional CSV file is generated to store the main training metrics independently of TensorBoard or other logging systems:
 
+```text
 training_metrics.csv
+```
 
 It contains:
 
+```text
 global_step,epoch,train_loss,step_loss,lr
+```
 
 This allows the training evolution to be analysed together with the energy and GPU measurements.
 
@@ -72,7 +78,9 @@ Checkpoint creation is measured separately from the rest of the training executi
 
 Before a checkpoint is saved, a CodeCarbon task named checkpoint is started. After the checkpoint has been completely saved, the task is stopped and its measurements are stored in:
 
+```text
 energy_per_checkpoint.csv
+```
 
 The file contains:
 
@@ -88,7 +96,9 @@ A workaround was added for an issue observed with CodeCarbon 3.2.8.
 
 After a checkpoint task is stopped, the internal task collection is cleared before subsequent CodeCarbon flushes:
 
+```text
 codecarbon_tracker._tasks.clear()
+```
 
 This prevents an error observed when flush() is called while completed tasks remain in the internal task collection.
 
@@ -98,6 +108,7 @@ This workaround depends on CodeCarbon’s internal implementation and may need t
 
 A typical training output directory can contain:
 
+```text
 output_dir/
 ├── emissions.csv
 ├── gpu_metrics.csv
@@ -105,6 +116,8 @@ output_dir/
 ├── energy_per_checkpoint.csv
 ├── model weights
 └── checkpoint-<step>/
+```
+
 
 The four CSV files provide complementary information:
 
@@ -118,11 +131,11 @@ energy_per_checkpoint.csv	Energy and emissions measured for checkpoint creation
 
 The folder contains scripts corresponding to the following adaptation methods:
 
-LoRA: trains low-rank adapter parameters while keeping the original model parameters frozen.
+- **LoRA:** trains low-rank adapter parameters while keeping the original model parameters frozen.
 
-Fine-tuning: updates the selected Stable Diffusion model parameters directly during training.
+- **Fine-tuning:** updates the selected Stable Diffusion model parameters directly during training.
 
-Textual Inversion: learns new textual embeddings while keeping the pretrained model weights fixed.
+- **Textual Inversion:** learns new textual embeddings while keeping the pretrained model weights fixed.
 
 Although the parameters being trained differ between methods, the additional monitoring functionality follows the same purpose across the three implementations: collecting training, GPU, energy, emissions, and checkpoint-related information for subsequent analysis.
 
