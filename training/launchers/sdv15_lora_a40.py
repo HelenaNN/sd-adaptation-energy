@@ -9,9 +9,9 @@ import signal
 
 # ── Model & paths ────────────────────────────────────────────────────────────
 MODEL_NAME = "stable-diffusion-v1-5/stable-diffusion-v1-5"
-DATASETS_BASE = "/mnt/rhome/hnn/datasets/wikiart"
-BASE_OUTPUT_DIR = Path("/mnt/rhome/hnn/experiments/sdv15/lora/outputs_a40_outputs_with_cp")
-GLOBAL_GPU_METRICS = BASE_OUTPUT_DIR / "global_gpu_metrics_40_with_cp.csv"
+DATASETS_BASE = "/path/to/your/datasets"
+BASE_OUTPUT_DIR = Path("/path/to/your/output_dir")
+GLOBAL_GPU_METRICS = BASE_OUTPUT_DIR / "global_gpu_metrics.csv"
 
 # ── Fixed hyperparameters ─────────────────────────────────────────────────────
 RANK = 8
