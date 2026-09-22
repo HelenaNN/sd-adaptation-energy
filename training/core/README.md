@@ -1,159 +1,132 @@
 # Modified Diffusers Training Scripts
 
-This folder contains modified training scripts based on the [training examples provided by Hugging Face Diffusers](https://github.com/huggingface/diffusers/tree/main/examples).
+This folder contains modified training scripts based on the official [examples provided by Hugging Face Diffusers](https://github.com/huggingface/diffusers/tree/main/examples?utm_source=gemini).
 
-The scripts are used to adapt Stable Diffusion models using three different approaches:
+The scripts are used to adapt Stable Diffusion models across three distinct approaches:
 
-- **LoRA**
-- **Fine-tuning**
-- **Textual Inversion**
+* **LoRA (Low-Rank Adaptation)**
+* **Full Fine-Tuning**
+* **Textual Inversion**
 
-The original Diffusers training procedures have been kept as the basis of the implementations. Additional functionality has been added to monitor the computational and environmental characteristics of each training execution.
+While the core training pipelines and adaptation logic from Hugging Face Diffusers remain intact, additional instrumentation has been integrated across all three scripts to monitor computational workload, hardware behaviour, and environmental impact during training.
 
-The original Hugging Face copyright and Apache 2.0 license notice are retained in the scripts.
+The original Hugging Face copyright notices and Apache 2.0 licenses are preserved in all script headers.
 
-## Modifications
+---
 
-The main modifications introduced for this project are related to energy monitoring, GPU monitoring, training metrics, and checkpoint analysis.
+## Key Modifications
 
-### Energy and emissions monitoring
+All scripts share a unified telemetry layer consisting of energy tracking, hardware monitoring, local metric logging, and isolated checkpoint energy profiling.
 
-[CodeCarbon](https://github.com/mlco2/codecarbon) is used to measure the energy consumed and associated emissions during training.
+### 1. Energy and Emissions Monitoring (`emissions.csv`)
 
-The tracker is created only by the local main process to avoid duplicated measurements when using distributed training.
+[CodeCarbon](https://github.com/mlco2/codecarbon?utm_source=gemini) is integrated to measure electrical consumption and estimated CO₂ equivalent emissions:
 
-The measurements are stored in:
+* **Distributed Safety:** The tracker is instantiated strictly by the local main process (`accelerator.is_local_main_process`) to prevent duplicate writes and race conditions during multi-GPU runs.
+* **Sampling & Flushing:** Configured with a 5-second sampling interval (`measure_power_secs=5`). It flushes data to disk every 10 seconds during training optimization steps.
+* **Fault-Tolerant Shutdown:** Wrapped inside a `try ... finally` block, ensuring that `codecarbon_tracker.stop()` is executed even if training is interrupted or raises an unhandled exception.
 
-```text
-emissions.csv
-```
+### 2. GPU Telemetry via `nvidia-smi` (`gpu_metrics.csv`)
 
+Hardware performance is polled every 10 seconds via direct calls to `nvidia-smi` and logged with the following schema:
 
-The tracker is started at the beginning of training and periodically flushed every 10 seconds. It is stopped when the training execution finishes, including when an exception occurs.
+| Column | Description |
+| --- | --- |
+| `timestamp` | Epoch Unix timestamp of the measurement |
+| `global_step` | Current training optimization step |
+| `temperature_gpu` | GPU core temperature (°C) |
+| `utilization_gpu` | GPU compute utilization percentage (%) |
+| `memory_used_mb` | Allocated VRAM (MB) |
+| `power_draw_w` | Instantaneous power consumption (Watts) |
 
-The tracker is configured with a 5-second power measurement interval.
+### 3. Standalone Training Metrics (`training_metrics.csv`)
 
-### GPU monitoring
-
-GPU information is periodically collected using nvidia-smi.
-
-The following metrics are recorded every 10 seconds:
-
-```text
-timestamp
-global_step
-temperature_gpu
-utilization_gpu
-memory_used_mb
-power_draw_w
-```
-
-They are stored in:
-
-```text
-gpu_metrics.csv
-```
-
-This provides information about GPU utilisation and power behaviour during the training execution.
-
-### Training metrics
-
-An additional CSV file is generated to store the main training metrics independently of TensorBoard or other logging systems:
-
-```text
-training_metrics.csv
-```
-
-It contains:
+To enable post-hoc analysis without relying exclusively on TensorBoard or Weights & Biases, training metrics are saved directly into a CSV file with the following columns:
 
 ```text
 global_step,epoch,train_loss,step_loss,lr
+
 ```
 
-This allows the training evolution to be analysed together with the energy and GPU measurements.
+* `train_loss`: Accumulated training loss averaged across processes.
+* `step_loss`: Raw loss value computed on the current batch/step.
+* `lr`: Scheduled learning rate at that specific step.
 
-### Checkpoint energy measurement
+### 4. Isolated Checkpoint Energy Measurement (`energy_per_checkpoint.csv`)
 
-Checkpoint creation is measured separately from the rest of the training execution.
+Saving model weights and optimizer states introduces non-negligible I/O and compute overhead. To isolate this cost from gradient computation:
 
-Before a checkpoint is saved, a CodeCarbon task named checkpoint is started. After the checkpoint has been completely saved, the task is stopped and its measurements are stored in:
+1. A dedicated sub-task is triggered immediately before serialization via `codecarbon_tracker.start_task("checkpoint")`.
+2. The task encapsulates directory cleanup (`--checkpoints_total_limit`), state serialization (`accelerator.save_state`), and weight conversion/saving.
+3. Upon completion, `stop_task("checkpoint")` isolates and records the energy consumed exclusively by the saving process.
 
-```text
-energy_per_checkpoint.csv
-```
-
-The file contains:
+**Recorded schema:**
 
 ```text
 timestamp,global_step,energy_consumed_kwh,emissions_kg,total_energy_kwh
+
 ```
 
-This makes it possible to analyse the energy and emissions associated specifically with checkpoint creation.
+### 5. CodeCarbon Compatibility Workaround
 
-The measured checkpoint operation includes the checkpoint management and saving operations performed between start_task() and stop_task(), including saving the training state and the model parameters.
+A targeted patch was included for an issue observed in **CodeCarbon 3.2.8**, where calling `flush()` after completing sub-tasks fails when `experiment_name=None`.
 
-### CodeCarbon compatibility workaround
+After stopping the task, the internal task registry is purged:
 
-A workaround was added for an issue observed with CodeCarbon 3.2.8.
-
-After a checkpoint task is stopped, the internal task collection is cleared before subsequent CodeCarbon flushes:
-
-```text
+```python
 codecarbon_tracker._tasks.clear()
+
 ```
 
-This prevents an error observed when flush() is called while completed tasks remain in the internal task collection.
+> **Note:** This workaround relies on private internal attributes of CodeCarbon (`_tasks`) and may not be required in earlier or future releases of the library.
 
-This workaround depends on CodeCarbon’s internal implementation and may need to be reviewed if a different CodeCarbon version is used.
+---
 
-## Output files
+## Output Directory Structure
 
-A typical training output directory can contain:
+Each run outputs the following structure within its target `--output_dir`:
 
 ```text
 output_dir/
-├── emissions.csv
-├── gpu_metrics.csv
-├── training_metrics.csv
-├── energy_per_checkpoint.csv
-├── model weights
-└── checkpoint-<step>/
+├── emissions.csv               # Continuous emissions log from CodeCarbon
+├── energy_per_checkpoint.csv   # Isolated energy cost per checkpoint creation
+├── gpu_metrics.csv             # GPU temperature, power, and utilization over time
+├── training_metrics.csv        # Step-by-step loss and learning rate history
+├── checkpoint-<step>/          # Periodic Accelerate checkpoints
+└── pytorch_lora_weights.safetensors (or model weights depending on the method)
+
 ```
 
+### Generated Files Summary
 
-The four CSV files provide complementary information:
-
-| File | Description |
+| File | Primary Use Case |
 | --- | --- |
-| `emissions.csv` | Energy consumption and emissions measured by CodeCarbon |
-| `gpu_metrics.csv` | GPU temperature, utilisation, memory usage and power draw |
-| `training_metrics.csv` | Training loss and learning-rate evolution |
-| `energy_per_checkpoint.csv` | Energy and emissions measured for checkpoint creation |
+| `emissions.csv` | Cumulative energy footprint and emissions calculation |
+| `gpu_metrics.csv` | Hardware saturation, power draw, and thermal throttling analysis |
+| `training_metrics.csv` | Convergence and optimization dynamics tracking |
+| `energy_per_checkpoint.csv` | I/O and disk write energy overhead benchmarking |
 
-## Training methods
+---
 
-The folder contains scripts corresponding to the following adaptation methods:
+## Requirements
 
-- **LoRA:** trains low-rank adapter parameters while keeping the original model parameters frozen.
+Ensure the additional dependencies are installed in your Python environment alongside Diffusers and Accelerate:
 
-- **Fine-tuning:** updates the selected Stable Diffusion model parameters directly during training.
+```bash
+pip install codecarbon
 
-- **Textual Inversion:** learns new textual embeddings while keeping the pretrained model weights fixed.
+```
 
-Although the parameters being trained differ between methods, the additional monitoring functionality follows the same purpose across the three implementations: collecting training, GPU, energy, emissions, and checkpoint-related information for subsequent analysis.
+> **Prerequisite:** Real-time GPU monitoring requires an NVIDIA driver with the `nvidia-smi` binary available in your system's `PATH`.
 
-### Relation to the original Diffusers scripts
+---
 
-The training logic and model adaptation procedures are based on the corresponding Hugging Face Diffusers examples.
+## Training Methods
 
-The project-specific additions are primarily:
+The implementations contained in this directory cover three common fine-tuning paradigms:
 
-* CodeCarbon energy and emissions tracking.
-* Periodic GPU monitoring through nvidia-smi.
-* CSV logging of training metrics.
-* Separate checkpoint energy measurements.
-* The CodeCarbon compatibility workaround described above.
+1. **LoRA:** Injects low-rank decomposition matrices into the cross-attention layers of the UNet, training minimal parameters while freezing the base model.
+2. **Full Fine-Tuning:** Directly updates the core parameters of the UNet/text encoders.
+3. **Textual Inversion:** Freezes all generative layers and learns new token embedding vectors inside the tokenizer/text encoder dictionary.
 
-The scripts should therefore be considered modified versions of the original Diffusers examples rather than completely independent implementations.
-
-For the original implementation and licensing information, refer to the Hugging Face Diffusers repository.
+Regardless of the parameter space being updated, all three scripts adhere to identical logging intervals, metric schemas, and instrumentation standards.
