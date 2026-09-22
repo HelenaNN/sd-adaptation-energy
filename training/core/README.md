@@ -206,8 +206,6 @@ pip install codecarbon
 
 ```
 
-> **Prerequisite:** Real-time GPU monitoring requires an NVIDIA driver with the `nvidia-smi` binary available in your system's `PATH`.
-
 ---
 
 ## Training Methods
