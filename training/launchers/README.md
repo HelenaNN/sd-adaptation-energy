@@ -62,6 +62,8 @@ In this repository, separate script files are provided for different GPUs (e.g.,
 | `sdv15_textual_inversion_a40.py`<br> | Textual Inversion | NVIDIA A40 | Batch size: 6, LR: 5e-4 |
 | `sdv15_textual_inversion.py`<br> | Textual Inversion | NVIDIA TITAN | Batch size: 12, LR: 5e-4 |
 
+> **Batch size** was a variable parameter during the experiments. The sizes above are just the last values used.
+> **Learning Rate (LR)** was a fixed parameter during the experiments. It can be also change.
 ---
 
 ## Generated Metrics & Output Files
