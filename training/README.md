@@ -26,7 +26,7 @@ Contains the actual training scripts based on Hugging Face Diffusers examples. T
 
 
 
-For details on the modifications made to the original Diffusers scripts and the generated CSV schemas, refer to the [core README](https://www.google.com/search?q=./core/README.md&utm_source=gemini).
+For details on the modifications made to the original Diffusers scripts and the generated CSV schemas, go see the [core README](https://www.google.com/search?q=./core/README.md&utm_source=gemini).
 
 ### [`launchers/`](https://www.google.com/search?q=./launchers&utm_source=gemini)
 
@@ -39,4 +39,4 @@ Contains Python orchestrator scripts designed to run experiment queues automatic
 
 
 
-For instructions on configuring queues, setting paths, and adapting scripts to your hardware, refer to the [launchers README](https://www.google.com/search?q=./launchers/README.md&utm_source=gemini).
+For instructions on configuring queues, setting paths, and adapting scripts to your hardware, go see the [launchers README](https://www.google.com/search?q=./launchers/README.md&utm_source=gemini).
