@@ -55,48 +55,12 @@ In this repository, separate script files are provided for different GPUs (e.g.,
 
 | Script | Technique | Default Target GPU / Environment | Key Parameters |
 | --- | --- | --- | --- |
-| `sdv15_lora_a40.py`<br> | LoRA
-
- | NVIDIA A40
-
- | Batch size: 24, Rank: 8, LR: 1e-4
-
- |
-| `sdv15_lora.py`<br> | LoRA
-
- | NVIDIA TITAN
-
- | Batch size: 12, Rank: 8, LR: 1e-4
-
- |
-| `sdv15_finetuning_a40-2.py`<br> | Full Fine-Tuning
-
- | NVIDIA A40
-
- | Batch size: 6, LR: 5e-6
-
- |
-| `sdv15_finetuning.py`<br> | Full Fine-Tuning
-
- | NVIDIA TITAN
-
- | Batch size: 6, LR: 5e-6
-
- |
-| `sdv15_textual_inversion_a40.py`<br> | Textual Inversion
-
- | NVIDIA A40
-
- | Batch size: 6, LR: 5e-4
-
- |
-| `sdv15_textual_inversion.py`<br> | Textual Inversion
-
- | NVIDIA TITAN
-
- | Batch size: 12, LR: 5e-4
-
- |
+| `sdv15_lora_a40.py`<br> | LoRA | NVIDIA A40 | Batch size: 24, Rank: 8, LR: 1e-4 |
+| `sdv15_lora.py`<br> | LoRA | NVIDIA TITAN | Batch size: 12, Rank: 8, LR: 1e-4 |
+| `sdv15_finetuning_a40-2.py`<br> | Full Fine-Tuning | NVIDIA A40 | Batch size: 6, LR: 5e-6 |
+| `sdv15_finetuning.py`<br> | Full Fine-Tuning | NVIDIA TITAN | Batch size: 6, LR: 5e-6 |
+| `sdv15_textual_inversion_a40.py`<br> | Textual Inversion | NVIDIA A40 | Batch size: 6, LR: 5e-4 |
+| `sdv15_textual_inversion.py`<br> | Textual Inversion | NVIDIA TITAN | Batch size: 12, LR: 5e-4 |
 
 ---
 
