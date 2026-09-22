@@ -47,20 +47,22 @@ In this repository, separate script files are provided for different GPUs (e.g.,
 
 **Using a single launcher:** It is not strictly necessary to keep separate launcher files for different GPUs. Because all launchers share identical structure, you can maintain a single script and adjust paths, `BATCH_SIZE`, or GPU device IDs directly at the top of the file to fit your target setup.
 
+> **FEEL FREE TO MODIFY THESE SCRIPTS AND USE THEM HOWEVER BEST FITS YOUR PROJECT**
+
 ---
 
 ## Script Inventory
 
 | Script | Technique | Default Target GPU / Environment | Key Parameters |
 | --- | --- | --- | --- |
-| `sdv15_lora_a40-2.py`<br> | LoRA
+| `sdv15_lora_a40.py`<br> | LoRA
 
  | NVIDIA A40
 
  | Batch size: 24, Rank: 8, LR: 1e-4
 
  |
-| `sdv15_lora-2.py`<br> | LoRA
+| `sdv15_lora.py`<br> | LoRA
 
  | NVIDIA TITAN
 
@@ -81,14 +83,14 @@ In this repository, separate script files are provided for different GPUs (e.g.,
  | Batch size: 6, LR: 5e-6
 
  |
-| `sdv15_textual_inversion_a40-2.py`<br> | Textual Inversion
+| `sdv15_textual_inversion_a40.py`<br> | Textual Inversion
 
  | NVIDIA A40
 
  | Batch size: 6, LR: 5e-4
 
  |
-| `sdv15_textual_inversion-2.py`<br> | Textual Inversion
+| `sdv15_textual_inversion.py`<br> | Textual Inversion
 
  | NVIDIA TITAN
 
