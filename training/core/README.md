@@ -25,7 +25,7 @@ The tracker is created only by the local main process to avoid duplicated measur
 The measurements are stored in:
 
 ```text
-emissions.csv ´´´
+emissions.csv´´´
 
 
 The tracker is started at the beginning of training and periodically flushed every 10 seconds. It is stopped when the training execution finishes, including when an exception occurs.
