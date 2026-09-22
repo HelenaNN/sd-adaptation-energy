@@ -12,9 +12,9 @@ import signal
 
 # ── Model & paths ────────────────────────────────────────────────────────────
 MODEL_NAME = "stable-diffusion-v1-5/stable-diffusion-v1-5"
-DATASETS_BASE = "/home/helena/backup/datasets/wikiart"
-BASE_OUTPUT_DIR = Path("/home/helena/Desktop/tfm/experiments/sdv15/textual_inversion/outputs_a40_isolated_gpu")
-GLOBAL_GPU_METRICS = BASE_OUTPUT_DIR / "global_gpu_metrics_a40_isolated_gpu.csv"
+DATASETS_BASE = "/path/to/your/datasets"
+BASE_OUTPUT_DIR = Path("/path/to/your/output_dir")
+GLOBAL_GPU_METRICS = BASE_OUTPUT_DIR / "global_gpu_metrics.csv"
 
 # ── Fixed hyperparameters ─────────────────────────────────────────────────────
 RESOLUTION = 512
