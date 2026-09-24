@@ -38,24 +38,12 @@ Hardware performance is polled every 10 seconds using `nvidia-smi` and logged wi
 
 | Column | Description |
 | --- | --- |
-| `timestamp` | Epoch Unix timestamp of the measurement
-
- |
-| `global_step` | Current training optimization step
-
- |
-| `temperature_gpu` | GPU core temperature (°C)
-
- |
-| `utilization_gpu` | GPU compute utilization percentage (%)
-
- |
-| `memory_used_mb` | Allocated VRAM (MB)
-
- |
-| `power_draw_w` | Instantaneous power consumption (Watts)
-
- |
+| `timestamp` | Epoch Unix timestamp of the measurement |
+| `global_step` | Current training optimization step |
+| `temperature_gpu` | GPU core temperature (°C) |
+| `utilization_gpu` | GPU compute utilization percentage (%) |
+| `memory_used_mb` | Allocated VRAM (MB) |
+| `power_draw_w` | Instantaneous power consumption (Watts) |
 
 ### 3. Standalone Training Metrics (`training_metrics.csv`)
 
@@ -67,11 +55,7 @@ global_step,epoch,train_loss,step_loss,lr
 ```
 
 * `train_loss`: Accumulated training loss averaged across processes.
-
-
 * `step_loss`: Loss value computed on the current step.
-
-
 * `lr`: Scheduled learning rate at that specific step.
 
 
@@ -81,11 +65,7 @@ global_step,epoch,train_loss,step_loss,lr
 Saving model weights and optimizer states introduces non-negligible I/O and compute overhead. To separate this cost from actual training steps:
 
 1. A dedicated sub-task is started right before saving via `codecarbon_tracker.start_task("checkpoint")`.
-
-
 2. The task covers directory cleanup (`--checkpoints_total_limit`), state serialization (`accelerator.save_state`), and weight conversion/saving.
-
-
 3. Once finished, `stop_task("checkpoint")` isolates and logs the energy consumed, emissions, and elapsed time strictly during the saving process.
 
 
@@ -137,18 +117,10 @@ output_dir/
 
 | File | Primary Use Case |
 | --- | --- |
-| `emissions.csv` | Cumulative energy footprint and emissions calculation
-
- |
-| `gpu_metrics.csv` | Hardware load, power draw, and thermal throttling analysis
-
- |
-| `training_metrics.csv` | Loss curves and learning rate progression
-
- |
-| `energy_per_checkpoint.csv` | Benchmarking the energy overhead and execution time of saving checkpoints
-
- |
+| `emissions.csv` | Cumulative energy footprint and emissions calculation |
+| `gpu_metrics.csv` | Hardware load, power draw, and thermal throttling analysis |
+| `training_metrics.csv` | Loss curves and learning rate progression |
+| `energy_per_checkpoint.csv` | Benchmarking the energy overhead and execution time of saving checkpoints |
 
 ---
 
@@ -172,11 +144,7 @@ pip install codecarbon
 The scripts in this directory cover three common fine-tuning approaches:
 
 1. **LoRA:** Injects low-rank decomposition matrices into the cross-attention layers of the UNet, training a minimal set of parameters while keeping the base model frozen.
-
-
 2. **Full Fine-Tuning:** Directly updates the weights of the UNet/text encoders.
-
-
 3. **Textual Inversion:** Freezes all model weights and optimizes new token embeddings inside the text encoder dictionary.
 
 
