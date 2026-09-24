@@ -2,7 +2,7 @@
 
 This directory contains evaluation scripts used to generate image samples across multiple intermediate checkpoints and trained runs for **LoRA**, **Full Fine-Tuning**, and **Textual Inversion**.
 
-The scripts iterate through experiment directories, load the corresponding model state at each checkpoint step, and generate outputs using a shared list of prompts.
+The scripts iterate through experiment directories, load the corresponding model state at each checkpoint step, and generate outputs using a provided list of prompts.
 
 ---
 
@@ -10,12 +10,24 @@ The scripts iterate through experiment directories, load the corresponding model
 
 ```text
 inference/
-├── prompts.csv             # Target prompts (one per line, headerless CSV)
+├── piranesi_prompts.csv    # Prompts used in the experiments (reference/example)
 ├── inference_lora.py       # Checkpoint sampling for LoRA adapters
 ├── inference_finetune.py   # Checkpoint sampling for full fine-tuned models
 └── inference_TI.py         # Step sampling for Textual Inversion embeddings
 
 ```
+---
+
+## Prompts File (`piranesi_prompts.csv`)
+
+The included `piranesi_prompts.csv` file contains the exact set of prompts used during the experiments reported in this project.
+
+* **Structure:** A headerless CSV file with one prompt per line.
+
+
+* **Usage:** You can use this file directly to reproduce the evaluation, use it as a reference format, or replace it with your own custom `.csv` file by updating `PROMPTS_FILE` in the scripts.
+
+
 
 ---
 
@@ -25,19 +37,14 @@ Each script follows a 3-tier nested loop structure:
 
 1. **Experiment run:** Iterates over the folder names provided in `TRAIN_NAMES`.
 
-
 2. **Checkpoint / Step:** Scans for existing intermediate weights in `CHECKPOINTS` / `STEPS_LIST`. Missing files are skipped automatically without interrupting execution.
 
-
-3. **Prompt evaluation:** Generates images for each line in `prompts.csv` and saves them in structured folders:
-
+3. **Prompt evaluation:** Generates images for each line in the prompt file and saves them in structured folders:
 
 ```text
 <OUTPUT_ROOT>/<experiment_name>/<checkpoint-step>/<sanitized_prompt>-<index>.png
 
 ```
-
-
 
 ### Implementation Specifics per Method
 
@@ -49,8 +56,6 @@ Each script follows a 3-tier nested loop structure:
 
 * **Textual Inversion (`inference_TI.py`):** Keeps the base pipeline in memory and registers intermediate token embeddings via `pipe.load_textual_inversion()`. It calls `pipe.unload_textual_inversion()` after each step to prevent token leakage across steps.
 
-
-
 ---
 
 ## Configuration & Usage
@@ -59,24 +64,12 @@ All parameters are configured directly at the top of each script:
 
 | Variable | Description |
 | --- | --- |
-| `BASE_DIR` | Directory where training outputs and checkpoints are stored
-
- |
-| `OUTPUT_ROOT` | Destination directory for generated image samples
-
- |
-| `PROMPTS_FILE` | Path to the `.csv` file containing text prompts
-
- |
-| `TRAIN_NAMES` | List of experiment directory names to process
-
- |
-| `CHECKPOINTS` / `STEPS_LIST` | Numerical step numbers to evaluate
-
- |
-| `PLACEHOLDER_TOKEN` *(TI only)* | Special learned token to insert into prompts
-
- |
+| `BASE_DIR` | Directory where training outputs and checkpoints are stored|
+| `OUTPUT_ROOT` | Destination directory for generated image samples|
+| `PROMPTS_FILE` | Path to the `.csv` file containing text prompts (default: `piranesi_prompts.csv`)|
+| `TRAIN_NAMES` | List of experiment directory names to process|
+| `CHECKPOINTS` / `STEPS_LIST` | Numerical step numbers to evaluate|
+| `PLACEHOLDER_TOKEN` *(TI only)* | Special learned token to insert into prompts|
 
 ### Running the Scripts
 
