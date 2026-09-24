@@ -74,21 +74,11 @@ Configure your experiment targets and checkpoints at the top of each file:
 
 | Setting | Description |
 | --- | --- |
-| `TRAININGS` | Dictionary mapping custom display labels to output directories
-
- |
-| `CHECKPOINTS` | List of step numbers to plot along the horizontal axis
-
- |
-| `PROMPTS` | Curated prompts to test stylistic acquisition across domains
-
- |
-| `SEED` | Fixed integer seed ensuring identical initial latent noise across steps
-
- |
-| `PLACEHOLDER_TOKEN` *(TI only)* | Special learned token added to prompts during generation
-
- |
+| `TRAININGS` | Dictionary mapping custom display labels to output directories |
+| `CHECKPOINTS` | List of step numbers to plot along the horizontal axis |
+| `PROMPTS` | Curated prompts to test stylistic acquisition across domains |
+| `SEED` | Fixed integer seed ensuring identical initial latent noise across steps |
+| `PLACEHOLDER_TOKEN` *(TI only)* | Special learned token added to prompts during generation |
 
 ### Running the Scripts
 
