@@ -3,91 +3,81 @@ import torch
 import pandas as pd
 import os
 
-# CONFIGURACIÓN
+# ── General Configuration ─────────────────────────────────────────────────────
+MODEL_NAME = "stable-diffusion-v1-5/stable-diffusion-v1-5"
+BASE_DIR = "outputs/textual_inversion"
+OUTPUT_ROOT = "generated_images/textual_inversion"
+PROMPTS_FILE = "prompts.csv"
 
-base_dir = "sd-adaptations/inference/images/textual_inversion/"
-
-train_names = [
-    "0_sdv15_textual_inversion_res512_Battista_steps5000_seed1337",
-    "1_sdv15_textual_inversion_res512_Battista_steps5000_seed1337",
-    "2_sdv15_textual_inversion_res512_Battista_steps5000_seed1337",
+# List of experiment folder names to evaluate
+TRAIN_NAMES = [
+    "experiment_ti_run_1",
 ]
 
-# Steps a generar (usan learned_embeds-steps-{N}.safetensors)
-steps_list = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
+# Saved steps to generate images for
+STEPS_LIST = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
 
-placeholder_token = "<piranesi-style>"
+# Learned placeholder token used during training
+PLACEHOLDER_TOKEN = "<custom-style>"
 
-prompts_file = "piranesi_prompts.csv"
+# Generation parameters
+NUM_INFERENCE_STEPS = 50
+GUIDANCE_SCALE = 7.5
 
-output_root = "images/outputs_a40_isolated_gpu"
-os.makedirs(output_root, exist_ok=True)
-
-# CARGA DE PROMPTS
-prompts = pd.read_csv(prompts_file, header=None)
-prompt_texts = prompts[0]
-
-
-def build_prompt(raw_prompt: str) -> str:
-    """Inserta el placeholder token en el prompt si no está ya presente."""
-    if placeholder_token in raw_prompt:
-        return raw_prompt
-    return f"{raw_prompt} {placeholder_token}"
+# ── Load Prompts ──────────────────────────────────────────────────────────────
+prompts_df = pd.read_csv(PROMPTS_FILE, header=None)
+prompt_texts = prompts_df[0]
 
 
-# BUCLE PRINCIPAL: entrenamientos -> steps -> prompts
+def build_prompt(raw_prompt: str, token: str) -> str:
+    """Appends the placeholder token if not already in the prompt."""
+    return raw_prompt if token in raw_prompt else f"{raw_prompt} {token}"
 
-for train_name in train_names:
-    train_dir = os.path.join(base_dir, train_name)
 
-    print(f"\n--- Cargando pipeline base para {train_name} ---")
+# ── Main Loop ─────────────────────────────────────────────────────────────────
+for train_name in TRAIN_NAMES:
+    train_dir = os.path.join(BASE_DIR, train_name)
 
-    # Pipeline base (sin textual inversion cargada todavía)
+    print(f"\n--- Loading base pipeline for: {train_name} ---")
+
     base_pipe = AutoPipelineForText2Image.from_pretrained(
-        "stable-diffusion-v1-5/stable-diffusion-v1-5",
+        MODEL_NAME,
         torch_dtype=torch.float16,
         safety_checker=None,
     ).to("cuda")
 
-    for step in steps_list:
-
+    for step in STEPS_LIST:
         embeds_path = os.path.join(train_dir, f"learned_embeds-steps-{step}.safetensors")
 
         if not os.path.isfile(embeds_path):
-            print(f"[WARNING] It does not exist {embeds_path}, it is passed.")
+            print(f"[SKIP] Embedding file not found: {embeds_path}")
             continue
 
-        print(f"\n=== Training: {train_name} | Step: {step} ===")
+        print(f"\n=== Evaluation: {train_name} | Step: {step} ===")
 
-        # Cargar el embedding de textual inversion correspondiente a este step.
-        # token=placeholder_token fuerza a que se registre con el token original,
-        # evitando que diffusers le asigne un nombre distinto si ya existe.
         base_pipe.load_textual_inversion(
             embeds_path,
-            token=placeholder_token,
+            token=PLACEHOLDER_TOKEN,
         )
 
-        img_path = os.path.join(output_root, train_name, f"step-{step}")
-        os.makedirs(img_path, exist_ok=True)
+        img_output_dir = os.path.join(OUTPUT_ROOT, train_name, f"step-{step}")
+        os.makedirs(img_output_dir, exist_ok=True)
 
-        for i, raw_prompt in enumerate(prompt_texts):
-            prompt = build_prompt(raw_prompt)
-            print(f"Generating image {i} for {train_name} / step-{step}...")
+        for idx, raw_prompt in enumerate(prompt_texts):
+            prompt = build_prompt(raw_prompt, PLACEHOLDER_TOKEN)
+            print(f"Generating image {idx + 1}/{len(prompt_texts)} for step-{step}...")
 
             image = base_pipe(
-                prompt,
-                num_inference_steps=50,
+                prompt=prompt,
+                num_inference_steps=NUM_INFERENCE_STEPS,
+                guidance_scale=GUIDANCE_SCALE,
             ).images[0]
 
-            safe_prompt = "".join(
-                c if c.isalnum() or c in " _-" else "_" for c in prompt
-            )[:50]
-            image.save(os.path.join(img_path, f"{safe_prompt}-{i}.png"))
+            safe_prompt = "".join(c if c.isalnum() or c in " _-" else "_" for c in prompt)[:50].strip()
+            image.save(os.path.join(img_output_dir, f"{safe_prompt}-{idx}.png"))
 
-        # Quitar el embedding actual antes de cargar el del siguiente step,
-        # para no acumular tokens distintos en el mismo pipeline.
+        # Unload the embedding before loading the next step
         base_pipe.unload_textual_inversion()
 
-    # Liberar memoria GPU antes de pasar al siguiente entrenamiento
     del base_pipe
     torch.cuda.empty_cache()
