@@ -999,9 +999,6 @@ def main():
                             logger.info(f"Saved state to {save_path}")
 
                             # --- Stop checkpoint task, log its isolated energy, and clear _tasks ---
-                            # Workaround for CodeCarbon 3.2.8 bug: flush() calls _persist_data with
-                            # experiment_name=None, which crashes when self._tasks is non-empty.
-                            # Clearing _tasks after stop_task prevents flush() from hitting task_out().
                             if codecarbon_tracker is not None:
                                 ckpt_task_emissions = codecarbon_tracker.stop_task("checkpoint")
                                 codecarbon_tracker._tasks.clear()
