@@ -11,54 +11,36 @@ from tqdm import tqdm
 
 from scores_calidad import func_clip_T_score
 
-# ----------------------------------------------------------------------
-# CONFIGURACIÓN
-# ----------------------------------------------------------------------
+# ── General Configuration ─────────────────────────────────────────────────────
+IMAGES_ROOT = "generated_images/textual_inversion"
+REAL_IMAGES_DIR = "datasets/reference_images"
+PROMPTS_FILE = "piranesi_prompts.csv"
+OUTPUT_CSV = "scores_textual_inversion.csv"
+PLACEHOLDER_TOKEN = "<custom-style>"
 
-images_root = "/home/helena/Desktop/tfm/images_and_scores/sdv15/textual_inversion/images/outputs_a40_multi_gpu"
-
-train_names = [
-    "0_sdv15_textual_inversion_res512_Battista_steps5000_seed1337",
-    "1_sdv15_textual_inversion_res512_Battista_steps5000_seed1337",
-    "2_sdv15_textual_inversion_res512_Battista_steps5000_seed1337s",
+TRAIN_NAMES = [
+    "experiment_ti_run_1",
 ]
 
-checkpoints = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
+CHECKPOINTS = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
 
-prompts_file = "piranesi_prompts.csv"
+KID_IMAGE_SIZE = (299, 299)
+KID_BATCH_SIZE = 32
+KID_SUBSET_SIZE = 50
 
-real_images_dir = "/home/helena/backup/datasets/wikiart/512_Battista_dataset"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-output_csv = "scores_TI_a40_multi_gpu.csv"
-
-# Parámetros KID (mismos que en el script viejo de LoRA)
-kid_image_size = (299, 299)
-kid_batch_size = 32
-kid_subset_size = 50  # nº de imágenes generadas por checkpoint determina el máximo viable
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# ----------------------------------------------------------------------
-# CARGA DE PROMPTS (una sola vez, se reutiliza en todos los checkpoints)
-# ----------------------------------------------------------------------
-
-prompts_df = pd.read_csv(prompts_file, header=None)
+# ── Load Prompts & CLIP ───────────────────────────────────────────────────────
+prompts_df = pd.read_csv(PROMPTS_FILE, header=None)
 prompt_texts = prompts_df[0].tolist()
 
-# ----------------------------------------------------------------------
-# MODELOS (se cargan una sola vez)
-# ----------------------------------------------------------------------
+print("Loading CLIP (ViT-B/32)...")
+clip_model, clip_preprocess = clip.load("ViT-B/32", device=DEVICE)
 
-print("Cargando CLIP...")
-clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
-
-# ----------------------------------------------------------------------
-# DATASET PARA KID
-# ----------------------------------------------------------------------
-
+# ── Dataset Definition ────────────────────────────────────────────────────────
 kid_transform = transforms.Compose([
-    transforms.Resize(kid_image_size),
-    transforms.CenterCrop(kid_image_size),
+    transforms.Resize(KID_IMAGE_SIZE),
+    transforms.CenterCrop(KID_IMAGE_SIZE),
     transforms.ToTensor(),
     transforms.Lambda(lambda x: (x * 255).clamp(0, 255).byte()),
 ])
@@ -81,14 +63,9 @@ class ImageDataset(Dataset):
         return kid_transform(img)
 
 
-def find_image_path(folder, prompt, idx):
-    """
-    El script de inferencia TI añade <piranesi-style> al prompt antes de
-    generar el nombre de archivo, y safe_prompt convierte los caracteres
-    especiales en '_'. Replicamos esa lógica aquí para encontrar el archivo.
-    """
-    prompt_with_token = f"{prompt} <piranesi-style>"
-    safe = "".join(c if c.isalnum() or c in " _-" else "_" for c in prompt_with_token)[:50]
+def find_image_path(folder, prompt, idx, token=PLACEHOLDER_TOKEN):
+    prompt_with_token = f"{prompt} {token}"
+    safe = "".join(c if c.isalnum() or c in " _-" else "_" for c in prompt_with_token)[:50].strip()
 
     candidate_1 = os.path.join(folder, f"{safe}-{idx}.png")
     candidate_2 = os.path.join(folder, f"{safe} -{idx}.png")
@@ -100,79 +77,74 @@ def find_image_path(folder, prompt, idx):
     return None
 
 
-# ----------------------------------------------------------------------
-# CARGAR EL DATASET REAL UNA SOLA VEZ (no cambia entre checkpoints)
-# ----------------------------------------------------------------------
-
-print(f"Cargando dataset real de: {real_images_dir}")
+# ── Load Real Dataset Once ────────────────────────────────────────────────────
+print(f"Loading reference dataset from: {REAL_IMAGES_DIR}")
 real_loader = DataLoader(
-    ImageDataset(real_images_dir),
-    batch_size=kid_batch_size,
+    ImageDataset(REAL_IMAGES_DIR),
+    batch_size=KID_BATCH_SIZE,
     shuffle=False,
 )
 
-# ----------------------------------------------------------------------
-# BUCLE PRINCIPAL: entrenamientos -> checkpoints
-# ----------------------------------------------------------------------
-
+# ── Main Metric Computation Loop ──────────────────────────────────────────────
 results = []
 
-for train_name in train_names:
-    for ckpt in checkpoints:
-
-        img_dir = os.path.join(images_root, train_name, f"step-{ckpt}")
+for train_name in TRAIN_NAMES:
+    for ckpt in CHECKPOINTS:
+        img_dir = os.path.join(IMAGES_ROOT, train_name, f"step-{ckpt}")
 
         if not os.path.isdir(img_dir):
-            print(f"[WARNING] No existe {img_dir}, se omite.")
+            print(f"[SKIP] Directory not found: {img_dir}")
             continue
 
-        print(f"\n=== Entrenamiento: {train_name} | Checkpoint: {ckpt} ===")
+        print(f"\n=== Evaluating: {train_name} | Step: {ckpt} ===")
 
-        # ---------------- CLIP-T ----------------
+        # 1. CLIP-T Score
         clip_t_scores = []
         missing = 0
 
         for i, prompt in enumerate(prompt_texts):
-            img_path = find_image_path(img_dir, prompt, i)
-
+            img_path = find_image_path(img_dir, prompt, i, token=PLACEHOLDER_TOKEN)
             if img_path is None:
                 missing += 1
                 continue
 
-            score = func_clip_T_score(img_path, prompt, clip_model, clip_preprocess, device)
+            score = func_clip_T_score(img_path, prompt, clip_model, clip_preprocess, DEVICE)
             clip_t_scores.append(score)
 
         if missing:
-            print(f"[WARNING] {missing} imagen(es) no encontradas para {train_name}/checkpoint-{ckpt}")
+            print(f"  [WARNING] {missing} image(s) not matched for step-{ckpt}")
 
         clip_t_mean = sum(clip_t_scores) / len(clip_t_scores) if clip_t_scores else float("nan")
 
-        # ---------------- KID ----------------
+        # 2. Kernel Inception Distance (KID)
         fake_dataset = ImageDataset(img_dir)
         n_fake = len(fake_dataset)
 
-        # subset_size no puede superar el nº de imágenes disponibles
-        effective_subset_size = min(kid_subset_size, n_fake)
+        if n_fake == 0:
+            print(f"  [WARNING] No generated images found in {img_dir}. Skipping KID.")
+            continue
+
+        effective_subset_size = min(KID_SUBSET_SIZE, n_fake)
 
         kid = KernelInceptionDistance(
             subsets=50,
             subset_size=effective_subset_size,
             normalize=False,
             reset_real_features=True,
-        ).to(device)
+        ).to(DEVICE)
 
-        for batch in tqdm(real_loader, desc="  Procesando reales", leave=False):
-            kid.update(batch.to(device), real=True)
+        for batch in tqdm(real_loader, desc="  Feeding real distribution", leave=False):
+            kid.update(batch.to(DEVICE), real=True)
 
-        fake_loader = DataLoader(fake_dataset, batch_size=kid_batch_size, shuffle=False)
-        for batch in tqdm(fake_loader, desc="  Procesando fakes", leave=False):
-            kid.update(batch.to(device), real=False)
+        fake_loader = DataLoader(fake_dataset, batch_size=KID_BATCH_SIZE, shuffle=False)
+        for batch in tqdm(fake_loader, desc="  Feeding generated distribution", leave=False):
+            kid.update(batch.to(DEVICE), real=False)
 
         kid_mean, kid_std = kid.compute()
         kid_mean = kid_mean.item()
         kid_std = kid_std.item()
 
-        print(f"  CLIP-T: {clip_t_mean:.4f} | KID: {kid_mean:.6f} ± {kid_std:.6f}")
+        print(f"  CLIP-T: {clip_t_mean:.4f} | KID: {kid_mean:.6f} +/- {kid_std:.6f}")
 
         results.append({
             "train_name": train_name,
@@ -183,19 +155,16 @@ for train_name in train_names:
             "KID_std": kid_std,
         })
 
-        # Liberar memoria GPU entre checkpoints
         del kid
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-# ----------------------------------------------------------------------
-# GUARDAR CSV FINAL
-# ----------------------------------------------------------------------
-
+# ── Export CSV Summary ────────────────────────────────────────────────────────
 fieldnames = ["train_name", "checkpoint", "n_images", "CLIP_T_score", "KID_mean", "KID_std"]
 
-with open(output_csv, mode="w", newline="") as f:
+with open(OUTPUT_CSV, mode="w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(results)
 
-print(f"\nResultados guardados en {output_csv}")
+print(f"\nResults successfully exported to {OUTPUT_CSV}")
